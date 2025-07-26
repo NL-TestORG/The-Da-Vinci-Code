@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <title>終極密碼語音版</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="https://aka.ms/csspeech/jsbrowserpackageraw"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@700&family=Noto+Sans+TC:wght@500&display=swap" rel="stylesheet">
+  <style>
+    html, body {
+      box-sizing: border-box;
+      width: 100%;
+      min-height: 100vh;
+      margin: 0;
+      padding: 0;
+    }
+    *, *:before, *:after {
+      box-sizing: inherit;
+    }
+    body {
+      font-family: 'Noto Sans TC', 'Baloo 2', Arial, sans-serif;
+      text-align: center;
+      background: linear-gradient(135deg, #f0f8ff 0%, #e0c3fc 100%);
+      padding-top: 50px;
+      min-height: 100vh;
+      margin: 0;
+    }
+    h1 {
+      font-family: 'Baloo 2', cursive;
+      font-size: 2.2em;
+      color: #6a11cb;
+      letter-spacing: 2px;
+      margin-bottom: 10px;
+      text-shadow: 2px 2px 8px #fff, 0 2px 8px #b721ff44;
+      word-break: break-all;
+    }
+    #instruction {
+      font-size: 1.1em;
+      color: #333;
+      margin-bottom: 18px;
+      background: #fff8;
+      display: inline-block;
+      padding: 8px 16px;
+      border-radius: 20px;
+      box-shadow: 0 2px 8px #b721ff22;
+      word-break: break-all;
+      max-width: 95vw;
+    }
+    button {
+      font-family: inherit;
+      font-size: 1em;
+      padding: 10px 20px;
+      margin: 10px 6px;
+      border: none;
+      border-radius: 30px;
+      background: linear-gradient(90deg, #6a11cb 0%, #2575fc 100%);
+      color: #fff;
+      font-weight: bold;
+      cursor: pointer;
+      box-shadow: 0 4px 16px #b721ff33;
+      transition: transform 0.1s, box-shadow 0.2s, background 0.3s;
+      max-width: 90vw;
+      word-break: break-all;
+    }
+    button:active {
+      transform: scale(0.97);
+      box-shadow: 0 2px 8px #b721ff22;
+    }
+    button:disabled {
+      background: #ccc;
+      color: #888;
+      cursor: not-allowed;
+      box-shadow: none;
+    }
+    #result {
+      font-size: 1.2em;
+      margin-top: 18px;
+      color: #333;
+      min-height: 2em;
+      font-weight: bold;
+      letter-spacing: 1px;
+      text-shadow: 0 1px 0 #fff;
+      word-break: break-all;
+      max-width: 95vw;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    #gift, #fail {
+      display: none;
+      font-size: 1.5em;
+      margin-top: 28px;
+      padding: 14px 0;
+      border-radius: 18px;
+      font-family: 'Baloo 2', cursive;
+      box-shadow: 0 4px 16px #b721ff33;
+      animation: pop 0.7s;
+      background: linear-gradient(90deg, #f7971e 0%, #ffd200 100%);
+      color: #6a11cb;
+      position: static;
+      width: auto;
+      height: auto;
+      align-items: unset;
+      justify-content: unset;
+      z-index: auto;
+      margin: 28px auto 0 auto;
+      max-width: 95vw;
+      word-break: break-all;
+    }
+    .show-gift {
+      position: fixed !important;
+      top: 0; left: 0;
+      width: 100vw !important;
+      height: 100vh !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      z-index: 9999 !important;
+      margin: 0 !important;
+      padding: 0 !important;
+      border-radius: 0 !important;
+      font-size: 2em !important;
+      max-width: 100vw !important;
+    }
+    #fail {
+      background: linear-gradient(90deg, #f953c6 0%, #b91d73 100%);
+      color: #fff;
+      animation: shake 0.5s;
+    }
+    @keyframes pop {
+      0% { transform: scale(0.7); opacity: 0; }
+      70% { transform: scale(1.1); opacity: 1; }
+      100% { transform: scale(1); }
+    }
+    @keyframes shake {
+      0% { transform: translateX(0); }
+      20% { transform: translateX(-10px); }
+      40% { transform: translateX(10px); }
+      60% { transform: translateX(-8px); }
+      80% { transform: translateX(8px); }
+      100% { transform: translateX(0); }
+    }
+    #guesses {
+      margin: 24px auto 0 auto;
+      max-width: 95vw;
+      background: #fff9;
+      border-radius: 18px;
+      box-shadow: 0 2px 12px #b721ff22;
+      padding: 12px 0 8px 0;
+      font-size: 1em;
+      color: #6a11cb;
+      font-family: 'Baloo 2', cursive;
+      min-height: 2em;
+      letter-spacing: 1px;
+      transition: background 0.3s;
+      animation: fadein 0.7s;
+      word-break: break-all;
+    }
+    @keyframes fadein {
+      from { opacity: 0; transform: translateY(20px);}
+      to { opacity: 1; transform: translateY(0);}
+    }
+    /* 音效icon動畫 */
+    #speakBtn:enabled::after {
+      content: " 🎤";
+      animation: micblink 1.2s infinite;
+    }
+    @keyframes micblink {
+      0%, 100% { opacity: 1;}
+      50% { opacity: 0.3;}
+    }
+    #timerBarContainer {
+      background: #eee;
+      border-radius: 16px;
+      height: 18px;
+      box-shadow: 0 2px 8px #b721ff22;
+      overflow: hidden;
+      width: 95vw;
+      max-width: 340px;
+      margin: 0 auto 10px auto;
+    }
+    #timerBar {
+      height: 100%;
+      width: 100%;
+      background: linear-gradient(90deg,#6a11cb,#2575fc);
+      transition: width 0.2s;
+    }
+    #timerText {
+      margin-top: 2px;
+      font-size: 1em;
+      color: #6a11cb;
+      font-family: 'Baloo 2',cursive;
+      max-width: 95vw;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    #speechText {
+      margin: 14px auto 0 auto !important;
+      max-width: 95vw !important;
+      font-size: 0.95em !important;
+      padding: 6px 0 6px 0 !important;
+      word-break: break-all;
+    }
+    @media (max-width: 600px) {
+      body {
+        padding-top: 18px;
+      }
+      h1 {
+        font-size: 1.3em;
+        padding: 0 4vw;
+      }
+      #instruction, #result, #gift, #fail, #guesses, #timerText, button {
+        font-size: 1em !important;
+        padding: 8px 4vw !important;
+        max-width: 98vw !important;
+      }
+      #timerBarContainer {
+        height: 14px;
+        max-width: 98vw;
+      }
+      #speechText {
+        font-size: 0.9em !important;
+        padding: 4px 0 4px 0 !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <h1>🎤 終極密碼：語音版 🎯</h1>
+  <p id="instruction">請說出你猜的數字（範圍 1～100）</p>
+  <button onclick="startGame()">開始遊戲</button>
+  <button onclick="startSpeech()" id="speakBtn" disabled>說出你的猜測</button>
+  <p id="result"></p>
+  <div id="gift">🎉 恭喜你猜對了！獲得小禮物 🎁</div>
+  <div id="fail">
+    😢 很可惜，你已經用完三次機會
+    <br>
+    <button id="resetBtn" style="margin-top:24px;display:none;">回到初始畫面</button>
+  </div>
+  <div id="guesses"></div>
+  <div id="timerBarContainer">
+    <div id="timerBar"></div>
+  </div>
+  <div id="timerText">10 秒</div>
+  <script>
+
+    let secretNumber;
+    let min = 1;
+    let max = 100;
+    let attemptsLeft = 3;
+    let guesses = [];
+    let timer = 10;
+    let timerMax = 10;
+    let timerInterval = null;
+
+    const resultEl = document.getElementById("result");
+    const giftEl = document.getElementById("gift");
+    const failEl = document.getElementById("fail");
+    const speakBtn = document.getElementById("speakBtn");
+    const guessesEl = document.getElementById("guesses");
+    const timerBar = document.getElementById("timerBar");
+    const timerText = document.getElementById("timerText");
+
+    /**
+     * 開始新遊戲，重設所有狀態與畫面
+     */
+    function startGame() {
+      secretNumber = Math.floor(Math.random() * 100) + 1;
+      min = 1;
+      max = 100;
+      attemptsLeft = 3;
+      guesses = [];
+      resultEl.textContent = "";
+      giftEl.style.display = "none";
+      failEl.style.display = "none";
+      speakBtn.disabled = false;
+      document.getElementById("instruction").textContent = `請說出你猜的數字（範圍 ${min}～${max}）`;
+      stopTimer();
+      resetTimer();
+      updateTimerBar();
+      updateGuessesDisplay();
+      document.querySelector('button[onclick="startGame()"]').disabled = true;
+      // 新增：自動啟動語音偵測
+      startSpeech();
+    }
+
+    /**
+     * 更新猜測紀錄的顯示內容
+     */
+    function updateGuessesDisplay() {
+      if (guesses.length === 0) {
+        guessesEl.textContent = "";
+        return;
+      }
+      guessesEl.innerHTML = guesses.map((num, idx) => `第${idx+1}次猜測：${num}`).join("<br>");
+    }
+
+    /**
+     * 啟動倒數計時器，並每 0.1 秒更新進度條
+     */
+    function startTimer() {
+      stopTimer();
+      timer = timerMax;
+      updateTimerBar();
+      timerInterval = setInterval(() => {
+        timer -= 0.1;
+        updateTimerBar();
+        if (timer <= 0) {
+          timer = 0;
+          updateTimerBar();
+          stopTimer();
+          onTimeout();
+        }
+      }, 100);
+    }
+
+    /**
+     * 停止倒數計時器
+     */
+    function stopTimer() {
+      if (timerInterval) {
+        clearInterval(timerInterval);
+        timerInterval = null;
+      }
+    }
+
+    /**
+     * 重設倒數計時器至最大值
+     */
+    function resetTimer() {
+      timer = timerMax;
+      updateTimerBar();
+    }
+
+    /**
+     * 根據目前倒數時間更新進度條與顯示文字
+     */
+    function updateTimerBar() {
+      const percent = Math.max(0, Math.min(1, timer / timerMax));
+      timerBar.style.width = (percent * 100) + "%";
+      timerText.textContent = `${Math.ceil(timer)} 秒`;
+      if (percent > 0.5) {
+        timerBar.style.background = "linear-gradient(90deg,#6a11cb,#2575fc)";
+      } else if (percent > 0.2) {
+        timerBar.style.background = "linear-gradient(90deg,#f7971e,#ffd200)";
+      } else {
+        timerBar.style.background = "linear-gradient(90deg,#f953c6,#b91d73)";
+      }
+    }
+
+    /**
+     * 倒數歸零時的處理：扣除一次機會並顯示提示
+     */
+    function onTimeout() {
+      // 倒數歸零時自動扣一次機會
+      if (speakBtn.disabled) return;
+      attemptsLeft--;
+      guesses.push("（超時）");
+      updateGuessesDisplay();
+      resultEl.textContent = "⌛ 超過 10 秒未作答，扣除一次機會";
+      if (attemptsLeft === 0) {
+        failEl.style.display = "block";
+        speakBtn.disabled = true;
+        resultEl.textContent = `😢 遊戲結束，正確答案是 ${secretNumber}`;
+      } else {
+        document.getElementById("instruction").textContent = `請說出你猜的數字（範圍 ${min}～${max}）`;
+        speakBtn.disabled = false;
+      }
+    }
+
+    /**
+     * 按下「說出你的猜測」時，啟動語音辨識與倒數計時
+     */
+    function startSpeech() {
+      speakBtn.disabled = true;
+      resetTimer();
+      startTimer();
+      const speechConfig = SpeechSDK.SpeechConfig.fromSubscription(azureKey, azureRegion);
+      speechConfig.speechRecognitionLanguage = "zh-TW";
+      const audioConfig = SpeechSDK.AudioConfig.fromDefaultMicrophoneInput();
+      const recognizer = new SpeechSDK.SpeechRecognizer(speechConfig, audioConfig);
+
+      resultEl.textContent = "正在辨識語音...";
+
+      recognizer.recognizeOnceAsync(result => {
+        stopTimer();
+        speakBtn.disabled = false;
+        if (result.reason === SpeechSDK.ResultReason.RecognizedSpeech) {
+            // 新增：記錄語音原始內容
+            updateSpeechTextDisplay(result.text);
+            const text = result.text.replace(/[^\d]/g, "");
+            const guess = parseInt(text, 10);
+            if (isNaN(guess) || guess < min || guess > max) {
+                resultEl.textContent = `⚠️ 請說出 ${min} 到 ${max} 的整數`;
+            } else {
+                guesses.push(guess);
+                updateGuessesDisplay();
+                checkAnswer(guess);
+            }
+        } else if (result.reason === SpeechSDK.ResultReason.NoMatch) {
+            resultEl.textContent = "❌ 沒有辨識到語音，可能是聲音太小或沒有說話，請再試一次";
+        } else if (result.reason === SpeechSDK.ResultReason.Canceled) {
+            const cancellation = SpeechSDK.CancellationDetails.fromResult(result);
+            if (cancellation.reason === SpeechSDK.CancellationReason.Error) {
+                resultEl.textContent = `❌ 辨識失敗，錯誤訊息：${cancellation.errorDetails}`;
+            } else {
+                resultEl.textContent = "❌ 語音辨識已取消，請再試一次";
+            }
+        } else {
+            resultEl.textContent = "❌ 語音辨識失敗，請再按一次「說出你的猜測」";
+        }
+        recognizer.close();
+      });
+    }
+
+    /**
+     * 新增：顯示每次語音辨識的原始內容
+     */
+    function updateSpeechTextDisplay(text) {
+      let speechTextEl = document.getElementById('speechText');
+      if (!speechTextEl) {
+        speechTextEl = document.createElement('div');
+        speechTextEl.id = 'speechText';
+        speechTextEl.style.margin = '18px auto 0 auto';
+        speechTextEl.style.maxWidth = '340px';
+        speechTextEl.style.fontSize = '1em';
+        speechTextEl.style.color = '#333';
+        speechTextEl.style.background = '#fff6';
+        speechTextEl.style.borderRadius = '12px';
+        speechTextEl.style.padding = '8px 0 8px 0';
+        speechTextEl.style.fontFamily = "'Noto Sans TC', Arial, sans-serif";
+        document.body.insertBefore(speechTextEl, document.getElementById('guesses').nextSibling);
+      }
+      // 顯示語音辨識內容
+      if (!window.speechTexts) window.speechTexts = [];
+      window.speechTexts.push(text);
+      // 只保留三筆
+      if (window.speechTexts.length > 3) window.speechTexts.shift();
+      speechTextEl.innerHTML = window.speechTexts.map((t, i) => `第${i+1}次語音內容：${t}`).join("<br>");
+    }
+
+    /**
+     * 檢查猜測結果，更新遊戲狀態與畫面
+     */
+    function checkAnswer(guess) {
+      attemptsLeft--;
+      if (guess === secretNumber) {
+        resultEl.textContent = `✅ 恭喜你猜中了！答案就是 ${secretNumber}`;
+        giftEl.classList.add('show-gift');
+        giftEl.style.display = "flex";
+        speakBtn.disabled = true;
+        document.querySelector('button[onclick="startGame()"]').disabled = false;
+        setTimeout(() => {
+          giftEl.style.display = "none";
+          giftEl.classList.remove('show-gift');
+          startGame();
+        }, 3000);
+      } else {
+        if (guess < secretNumber) {
+          // 猜的數字比答案小，範圍變更為 guess+1 ~ max
+          min = Math.max(min, guess + 1);
+          resultEl.textContent = `猜錯了！答案比 ${guess} 大，剩下 ${attemptsLeft} 次機會`;
+        } else {
+          // 猜的數字比答案大，範圍變更為 min ~ guess-1
+          max = Math.min(max, guess - 1);
+          resultEl.textContent = `猜錯了！答案比 ${guess} 小，剩下 ${attemptsLeft} 次機會`;
+        }
+        // 依據最新範圍更新提示
+        document.getElementById("instruction").textContent = `請說出你猜的數字（範圍 ${min}～${max}）`;
+        if (attemptsLeft === 0) {
+          resultEl.textContent = `😢 遊戲結束，正確答案是 ${secretNumber}`;
+          failEl.style.display = "block";
+          // 顯示遊戲結束按鈕
+          document.getElementById('resetBtn').style.display = "inline-block";
+          speakBtn.disabled = true;
+          document.querySelector('button[onclick="startGame()"]').disabled = false;
+        }
+      }
+      // 讓「開始遊戲」按鈕在任何結束狀態都可用
+      document.querySelector('button[onclick="startGame()"]').disabled = false;
+    }
+
+    // 新增：回到初始畫面功能
+    function resetToInitial() {
+      // 重設所有狀態與畫面
+      secretNumber = undefined;
+      min = 1;
+      max = 100;
+      attemptsLeft = 3;
+      guesses = [];
+      resultEl.textContent = "";
+      giftEl.style.display = "none";
+      failEl.style.display = "none";
+      speakBtn.disabled = true;
+      document.getElementById("instruction").textContent = "請說出你猜的數字（範圍 1～100）";
+      stopTimer();
+      resetTimer();
+      updateTimerBar();
+      updateGuessesDisplay();
+      document.querySelector('button[onclick="startGame()"]').disabled = false;
+      // 清空語音內容紀錄
+      window.speechTexts = [];
+      let speechTextEl = document.getElementById('speechText');
+      if (speechTextEl) speechTextEl.innerHTML = '';
+    }
+
+    // 綁定resetBtn事件
+    document.addEventListener('DOMContentLoaded', function() {
+      const resetBtn = document.getElementById('resetBtn');
+      if (resetBtn) {
+        resetBtn.onclick = resetToInitial;
+      }
+    });
+  </script>
+  <script src="all.js"></script>
+</body>
+</html>
