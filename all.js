@@ -2,8 +2,7 @@
 // const azureKey = process.env.AZURE_SPEECH_KEY;
 // const azureRegion = process.env.AZURE_SPEECH_REGION;
 
-// 直接寫死 key 與 region（僅供測試用，請勿用於正式環境）
-//const azureKey = "6fLpjrJ1i0y59V5j4FpFEQPgtU3CxuAR77opl8rSOFPUV827XUu8JQQJ99BGAC3pKaRXJ3w3AAAYACOG8AAF";
+
 
 // encryptedKey 是你剛剛用 CryptoJS 產生的加密金鑰字串
 const encryptedKey = "U2FsdGVkX1/r4PTRr/HVQKeKnKd0IjKc3NWjzgqI/pw2bKmZBk3AwFKemWoUyGkJHQjvqkSCNKDki8e2MVVE+IE44BleaNVt3sexWfGIukBQjW7V46+k6AUTQlj2ogaHzgmaHKya/JJfR4mXGTSPDw==";
