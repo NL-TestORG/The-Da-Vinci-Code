@@ -29,29 +29,7 @@ console.log("Using speech key:", azureKey);
 console.log("Using speech region:", azureRegion);
 
 let secretNumber;
-let min = 1;// ...existing code...
-function resetToInitial() {
-  secretNumber = undefined;
-  min = 1;
-  max = 30;
-  attemptsLeft = 3;
-  guesses = [];
-  resultEl.textContent = "";
-  giftEl.style.display = "none";
-  failEl.style.display = "none";
-  speakBtn.disabled = true;
-  document.getElementById("instruction").textContent = "請說出你猜的數字（範圍 1～30）";
-  stopTimer();
-  resetTimer();
-  updateTimerBar();
-  updateGuessesDisplay();
-  document.querySelector('button[onclick="startGame()"]').disabled = false;
-  // 只有在回到初始畫面時才清空語音內容
-  window.speechTexts = [];
-  let speechTextEl = document.getElementById('speechText');
-  if (speechTextEl) speechTextEl.innerHTML = '';
-}
-// ...existing code...
+let min = 1;
 let max = 30;
 let attemptsLeft = 3;
 let guesses = [];
@@ -346,6 +324,33 @@ function resetToInitial() {
   updateGuessesDisplay();
   document.querySelector('button[onclick="startGame()"]').disabled = false;
   // 只有在回到初始畫面時才清空語音內容
+  window.speechTexts = [];
+  let speechTextEl = document.getElementById('speechText');
+  if (speechTextEl) speechTextEl.innerHTML = '';
+}
+
+/**
+ * 完全重置遊戲，回到初始畫面
+ */
+function restartGame() {
+  // 完全重置所有狀態與畫面
+  secretNumber = undefined;
+  min = 1;
+  max = 30;
+  attemptsLeft = 3;
+  guesses = [];
+  resultEl.textContent = "";
+  giftEl.style.display = "none";
+  failEl.style.display = "none";
+  speakBtn.disabled = true;
+  document.getElementById("instruction").textContent = "請說出你猜的數字（範圍 1～30）";
+  stopTimer();
+  resetTimer();
+  updateTimerBar();
+  updateGuessesDisplay();
+  document.querySelector('button[onclick="startGame()"]').disabled = false;
+  document.getElementById('resetBtn').style.display = "none";
+  // 清空語音內容
   window.speechTexts = [];
   let speechTextEl = document.getElementById('speechText');
   if (speechTextEl) speechTextEl.innerHTML = '';
