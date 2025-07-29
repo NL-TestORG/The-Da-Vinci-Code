@@ -171,30 +171,34 @@ function startSpeech() {
   recognizer.recognizeOnceAsync(result => {
     stopTimer();
     speakBtn.disabled = false;
-    if (result.reason === SpeechSDK.ResultReason.RecognizedSpeech) {
-        updateSpeechTextDisplay(result.text);
-        const text = result.text.replace(/[^\d]/g, "");
-        const guess = parseInt(text, 10);
-        if (isNaN(guess) || guess < min || guess > max) {
-            resultEl.textContent = `⚠️ 請說出 ${min} 到 ${max} 的整數`;
-        } else {
-            guesses.push(guess);
-            updateGuessesDisplay();
-            checkAnswer(guess);
-        }
-    } else if (result.reason === SpeechSDK.ResultReason.NoMatch) {
-        resultEl.textContent = "❌ 沒有辨識到語音，可能是聲音太小或沒有說話，請再試一次";
-    } else if (result.reason === SpeechSDK.ResultReason.Canceled) {
-        const cancellation = SpeechSDK.CancellationDetails.fromResult(result);
-        if (cancellation.reason === SpeechSDK.CancellationReason.Error) {
-            resultEl.textContent = `❌ 辨識失敗，錯誤訊息：${cancellation.errorDetails}`;
-        } else {
-            resultEl.textContent = "❌ 語音辨識已取消，請再試一次";
-        }
-    } else {
-        resultEl.textContent = "❌ 語音辨識失敗，請再按一次「說出你的猜測」";
-    }
     recognizer.close();
+
+    if (result.reason === SpeechSDK.ResultReason.RecognizedSpeech) {
+      updateSpeechTextDisplay(result.text);
+
+      // 嘗試從語音結果中找出第一個 1~3 位數字
+      const match = result.text.match(/\d{1,3}/);
+      const guess = match ? parseInt(match[0], 10) : NaN;
+
+      if (isNaN(guess) || guess < min || guess > max) {
+        resultEl.textContent = `⚠️ 請說出 ${min} 到 ${max} 的整數`;
+      } else {
+        guesses.push(guess);
+        updateGuessesDisplay();
+        checkAnswer(guess);
+      }
+    } else if (result.reason === SpeechSDK.ResultReason.NoMatch) {
+      resultEl.textContent = "❌ 沒有辨識到語音，請清楚說出一個數字";
+    } else if (result.reason === SpeechSDK.ResultReason.Canceled) {
+      const cancellation = SpeechSDK.CancellationDetails.fromResult(result);
+      if (cancellation.reason === SpeechSDK.CancellationReason.Error) {
+        resultEl.textContent = `❌ 辨識失敗，錯誤訊息：${cancellation.errorDetails}`;
+      } else {
+        resultEl.textContent = "❌ 語音辨識已取消，請再試一次";
+      }
+    } else {
+      resultEl.textContent = "❌ 語音辨識失敗，請再按一次「說出你的猜測」";
+    }
   });
 }
 
