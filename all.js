@@ -29,8 +29,30 @@ console.log("Using speech key:", azureKey);
 console.log("Using speech region:", azureRegion);
 
 let secretNumber;
-let min = 1;
-let max = 100;
+let min = 1;// ...existing code...
+function resetToInitial() {
+  secretNumber = undefined;
+  min = 1;
+  max = 30;
+  attemptsLeft = 3;
+  guesses = [];
+  resultEl.textContent = "";
+  giftEl.style.display = "none";
+  failEl.style.display = "none";
+  speakBtn.disabled = true;
+  document.getElementById("instruction").textContent = "請說出你猜的數字（範圍 1～30）";
+  stopTimer();
+  resetTimer();
+  updateTimerBar();
+  updateGuessesDisplay();
+  document.querySelector('button[onclick="startGame()"]').disabled = false;
+  // 只有在回到初始畫面時才清空語音內容
+  window.speechTexts = [];
+  let speechTextEl = document.getElementById('speechText');
+  if (speechTextEl) speechTextEl.innerHTML = '';
+}
+// ...existing code...
+let max = 30;
 let attemptsLeft = 3;
 let guesses = [];
 let timer = 10;
@@ -49,9 +71,9 @@ const timerText = document.getElementById("timerText");
  * 開始新遊戲，重設所有狀態與畫面
  */
 function startGame() {
-  secretNumber = Math.floor(Math.random() * 100) + 1;
+  secretNumber = Math.floor(Math.random() * 30) + 1;
   min = 1;
-  max = 100;
+  max = 30;
   attemptsLeft = 3;
   guesses = [];
   resultEl.textContent = "";
@@ -65,6 +87,7 @@ function startGame() {
   updateGuessesDisplay();
   document.querySelector('button[onclick="startGame()"]').disabled = true;
   document.getElementById('resetBtn').style.display = "none";
+  // 不要清空 speechTexts，保留語音內容顯示
   // 自動啟動語音偵測
   startSpeech();
 }
@@ -148,6 +171,9 @@ function onTimeout() {
     speakBtn.disabled = true;
     resultEl.textContent = `😢 遊戲結束，正確答案是 ${secretNumber}`;
     document.getElementById('resetBtn').style.display = "inline-block";
+    setTimeout(() => {
+      resetToInitial();
+    }, 10000); // 10秒後自動回到初始畫面
   } else {
     document.getElementById("instruction").textContent = `請說出你猜的數字（範圍 ${min}～${max}）`;
     speakBtn.disabled = false;
@@ -177,8 +203,19 @@ function startSpeech() {
       updateSpeechTextDisplay(result.text);
 
       // 嘗試從語音結果中找出第一個 1~3 位數字
-      const match = result.text.match(/\d{1,3}/);
-      const guess = match ? parseInt(match[0], 10) : NaN;
+      let match = result.text.match(/\d{1,3}/);
+      let guess;
+      if (match) {
+        guess = parseInt(match[0], 10);
+      } else {
+        // 嘗試找國字數字
+        const chineseMatch = result.text.match(/(一十[一二三四五六七八九]|十[一二三四五六七八九]?|[一二三四五六七八九十零兩])/);
+        if (chineseMatch) {
+          guess = chineseNumToDigit(chineseMatch[0]);
+        } else {
+          guess = NaN;
+        }
+      }
 
       if (isNaN(guess) || guess < min || guess > max) {
         resultEl.textContent = `⚠️ 請說出 ${min} 到 ${max} 的整數`;
@@ -200,6 +237,30 @@ function startSpeech() {
       resultEl.textContent = "❌ 語音辨識失敗，請再按一次「說出你的猜測」";
     }
   });
+}
+
+/**
+ * 將常見中文數字（十位數以下）轉換為阿拉伯數字
+ */
+function chineseNumToDigit(text) {
+  const map = {
+    "零": 0, "一": 1, "二": 2, "兩": 2, "三": 3, "四": 4, "五": 5,
+    "六": 6, "七": 7, "八": 8, "九": 9, "十": 10
+  };
+  // 處理「十」開頭（如「十三」=13、「十二」=12、「十」=10）
+  if (/^十[一二三四五六七八九]?$/.test(text)) {
+    if (text.length === 1) return 10;
+    return 10 + map[text[1]];
+  }
+  // 處理「一十X」格式（如「一十三」=13）
+  if (/^[一二三四五六七八九]十[一二三四五六七八九]?$/.test(text)) {
+    const ten = map[text[0]] * 10;
+    if (text.length === 2) return ten;
+    return ten + map[text[2]];
+  }
+  // 單一數字
+  if (map.hasOwnProperty(text)) return map[text];
+  return NaN;
 }
 
 /**
@@ -257,6 +318,9 @@ function checkAnswer(guess) {
       document.getElementById('resetBtn').style.display = "inline-block";
       speakBtn.disabled = true;
       document.querySelector('button[onclick="startGame()"]').disabled = false;
+      setTimeout(() => {
+        resetToInitial();
+      }, 10000); // 1秒後自動回到初始畫面
     }
   }
   document.querySelector('button[onclick="startGame()"]').disabled = false;
@@ -268,7 +332,7 @@ function checkAnswer(guess) {
 function resetToInitial() {
   secretNumber = undefined;
   min = 1;
-  max = 100;
+  max = 30;
   attemptsLeft = 3;
   guesses = [];
   resultEl.textContent = "";
@@ -281,6 +345,7 @@ function resetToInitial() {
   updateTimerBar();
   updateGuessesDisplay();
   document.querySelector('button[onclick="startGame()"]').disabled = false;
+  // 只有在回到初始畫面時才清空語音內容
   window.speechTexts = [];
   let speechTextEl = document.getElementById('speechText');
   if (speechTextEl) speechTextEl.innerHTML = '';
