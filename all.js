@@ -317,7 +317,7 @@ function resetToInitial() {
   giftEl.style.display = "none";
   failEl.style.display = "none";
   speakBtn.disabled = true;
-  document.getElementById("instruction").textContent = "請說出你猜的數字（範圍 1～100）";
+  document.getElementById("instruction").textContent = "請說出你猜的數字（範圍 1～30）";
   stopTimer();
   resetTimer();
   updateTimerBar();
