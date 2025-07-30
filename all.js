@@ -180,24 +180,30 @@ function startSpeech() {
     if (result.reason === SpeechSDK.ResultReason.RecognizedSpeech) {
       updateSpeechTextDisplay(result.text);
 
-      // 嘗試從語音結果中找出第一個 1~3 位數字
-      let match = result.text.match(/\d{1,3}/);
+      // 統一判斷式：先找「[一二三四五六七八九]十[一二三四五六七八九]?」或「十[一二三四五六七八九]?」，再找阿拉伯數字，再找單一國字數字
       let guess;
-      if (match) {
-        guess = parseInt(match[0], 10);
+      // 先判斷個位數（1~9）
+      let singleMatch = result.text.match(/([一二三四五六七八九])/);
+      if (singleMatch && result.text.length === 1) {
+        guess = chineseNumToDigit(singleMatch[0]);
       } else {
-        // 嘗試找國字數字（支援 1~99，含「二十幾」等格式）
-        // 先找「[一二三四五六七八九]十[一二三四五六七八九]?」或「十[一二三四五六七八九]?」
-        const chineseMatch = result.text.match(/([一二三四五六七八九]十[一二三四五六七八九]?|十[一二三四五六七八九]?|[一二三四五六七八九十零兩])/);
-        if (chineseMatch) {
-          guess = chineseNumToDigit(chineseMatch[0]);
+        // 判斷十幾（10~19）
+        let teenMatch = result.text.match(/^十([一二三四五六七八九])?$/);
+        if (teenMatch) {
+          guess = chineseNumToDigit(teenMatch[0]);
         } else {
-          // 嘗試找「二十幾」這種格式
-          const complexMatch = result.text.match(/([一二三四五六七八九])十([一二三四五六七八九])/);
-          if (complexMatch) {
-        guess = chineseNumToDigit(complexMatch[0]);
+          // 判斷二十幾（20~29）
+          let twentyMatch = result.text.match(/^二十([一二三四五六七八九])?$/);
+          if (twentyMatch) {
+            guess = chineseNumToDigit(twentyMatch[0]);
           } else {
-        guess = NaN;
+            // 判斷阿拉伯數字
+            let numMatch = result.text.match(/\d{1,3}/);
+            if (numMatch) {
+              guess = parseInt(numMatch[0], 10);
+            } else {
+              guess = NaN;
+            }
           }
         }
       }
