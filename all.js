@@ -134,7 +134,7 @@ function updateTimerBar() {
  * 倒數歸零時的處理：扣除一次機會並顯示提示
  */
 function onTimeout() {
-  // 倒數歸零時自動扣一次機會
+  // 倒數歸零時自動扣除一次機會
   if (speakBtn.disabled) return;
   attemptsLeft--;
   guesses.push("（超時）");
@@ -176,13 +176,20 @@ function startSpeech(retry = false) {
     if (result.reason === SpeechSDK.ResultReason.RecognizedSpeech) {
       updateSpeechTextDisplay(result.text);
 
-      // 新增：先去除標點符號與空白
-      let cleanText = result.text.replace(/[^\d一二三四五六七八九十零兩]/g, '');
+      // 新增：先去除標點符號與空白，並將「是」直接取代為「四」
+      let cleanText = result.text.replace(/[^\d一二三四五六七八九十零兩是五]/g, '');
+      if (cleanText === "是") cleanText = "四";
+      // 強化：「五」如果被誤辨為空字串，或語音內容有「5」或"five"或"伍"，都視為「五」
+      if (
+        (!cleanText && (/五/.test(result.text) || /5/.test(result.text) || /伍/.test(result.text) || /five/i.test(result.text)))
+        || cleanText === ""
+      ) {
+        cleanText = "五";
+      }
 
       // 統一判斷式：先找「[一二三四五六七八九]十[一二三四五六七八九]?」或「十[一二三四五六七八九]?」，再找阿拉伯數字，再找單一國字數字
       let guess;
-      // 先判斷個位數（1~9）
-      let singleMatch = cleanText.match(/^([一二三四五六七八九])$/);
+      let singleMatch = cleanText.match(/^([一二三四五六七八九五])$/);
       if (singleMatch) {
         guess = chineseNumToDigit(singleMatch[0]);
       } else {
@@ -239,7 +246,7 @@ function startSpeech(retry = false) {
  */
 function chineseNumToDigit(text) {
   const map = {
-    "零": 0, "一": 1, "二": 2, "兩": 2, "三": 3, "四": 4, "五": 5,
+    "零": 0, "一": 1, "二": 2, "兩": 2, "三": 3, "四": 4, "是": 4, "五": 5,
     "六": 6, "七": 7, "八": 8, "九": 9, "十": 10
   };
   // 處理「十」開頭（如「十三」=13、「十二」=12、「十」=10）
@@ -253,8 +260,10 @@ function chineseNumToDigit(text) {
     if (text.length === 2) return ten;
     return ten + map[text[2]];
   }
-  // 單一數字
+  // 處理單一數字或「是」
   if (map.hasOwnProperty(text)) return map[text];
+  // 若是單一字元且為「是」，也回傳4
+  if (text.length === 1 && text === "是") return 4;
   return NaN;
 }
 
