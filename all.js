@@ -186,12 +186,19 @@ function startSpeech() {
       if (match) {
         guess = parseInt(match[0], 10);
       } else {
-        // 嘗試找國字數字
-        const chineseMatch = result.text.match(/(一十[一二三四五六七八九]|十[一二三四五六七八九]?|[一二三四五六七八九十零兩])/);
+        // 嘗試找國字數字（支援 1~99，含「二十幾」等格式）
+        // 先找「[一二三四五六七八九]十[一二三四五六七八九]?」或「十[一二三四五六七八九]?」
+        const chineseMatch = result.text.match(/([一二三四五六七八九]十[一二三四五六七八九]?|十[一二三四五六七八九]?|[一二三四五六七八九十零兩])/);
         if (chineseMatch) {
           guess = chineseNumToDigit(chineseMatch[0]);
         } else {
-          guess = NaN;
+          // 嘗試找「二十幾」這種格式
+          const complexMatch = result.text.match(/([一二三四五六七八九])十([一二三四五六七八九])/);
+          if (complexMatch) {
+        guess = chineseNumToDigit(complexMatch[0]);
+          } else {
+        guess = NaN;
+          }
         }
       }
 
