@@ -17,10 +17,6 @@ function decryptKey() {
   return key;
 }
 
-// window.showDecrypted = () => {
-//   const key = decryptKey();
-//   document.getElementById("result").textContent = `🔑 解密後金鑰: ${key}`;
-// };
 
 const azureKey = decryptKey();
 const azureRegion = "eastasia";
@@ -161,7 +157,7 @@ function onTimeout() {
 /**
  * 按下「說出你的猜測」時，啟動語音辨識與倒數計時
  */
-function startSpeech() {
+function startSpeech(retry = false) {
   speakBtn.disabled = true;
   resetTimer();
   startTimer();
@@ -170,7 +166,7 @@ function startSpeech() {
   const audioConfig = SpeechSDK.AudioConfig.fromDefaultMicrophoneInput();
   const recognizer = new SpeechSDK.SpeechRecognizer(speechConfig, audioConfig);
 
-  resultEl.textContent = "正在辨識語音...";
+  resultEl.textContent = retry ? "請再說一次..." : "正在辨識語音...";
 
   recognizer.recognizeOnceAsync(result => {
     stopTimer();
@@ -180,25 +176,28 @@ function startSpeech() {
     if (result.reason === SpeechSDK.ResultReason.RecognizedSpeech) {
       updateSpeechTextDisplay(result.text);
 
+      // 新增：先去除標點符號與空白
+      let cleanText = result.text.replace(/[^\d一二三四五六七八九十零兩]/g, '');
+
       // 統一判斷式：先找「[一二三四五六七八九]十[一二三四五六七八九]?」或「十[一二三四五六七八九]?」，再找阿拉伯數字，再找單一國字數字
       let guess;
       // 先判斷個位數（1~9）
-      let singleMatch = result.text.match(/([一二三四五六七八九])/);
-      if (singleMatch && result.text.length === 1) {
+      let singleMatch = cleanText.match(/^([一二三四五六七八九])$/);
+      if (singleMatch) {
         guess = chineseNumToDigit(singleMatch[0]);
       } else {
         // 判斷十幾（10~19）
-        let teenMatch = result.text.match(/^十([一二三四五六七八九])?$/);
+        let teenMatch = cleanText.match(/^十([一二三四五六七八九])?$/);
         if (teenMatch) {
           guess = chineseNumToDigit(teenMatch[0]);
         } else {
           // 判斷二十幾（20~29）
-          let twentyMatch = result.text.match(/^二十([一二三四五六七八九])?$/);
+          let twentyMatch = cleanText.match(/^二十([一二三四五六七八九])?$/);
           if (twentyMatch) {
             guess = chineseNumToDigit(twentyMatch[0]);
           } else {
             // 判斷阿拉伯數字
-            let numMatch = result.text.match(/\d{1,3}/);
+            let numMatch = cleanText.match(/\d{1,3}/);
             if (numMatch) {
               guess = parseInt(numMatch[0], 10);
             } else {
@@ -216,7 +215,12 @@ function startSpeech() {
         checkAnswer(guess);
       }
     } else if (result.reason === SpeechSDK.ResultReason.NoMatch) {
-      resultEl.textContent = "❌ 沒有辨識到語音，請清楚說出一個數字";
+      if (!retry) {
+        // 第一次沒辨識到，自動再啟動一次
+        startSpeech(true);
+      } else {
+        resultEl.textContent = "❌ 沒有辨識到語音，請清楚說出一個數字";
+      }
     } else if (result.reason === SpeechSDK.ResultReason.Canceled) {
       const cancellation = SpeechSDK.CancellationDetails.fromResult(result);
       if (cancellation.reason === SpeechSDK.CancellationReason.Error) {
