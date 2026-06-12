@@ -388,4 +388,25 @@ document.addEventListener('DOMContentLoaded', function() {
   if (resetBtn) {
     resetBtn.onclick = resetToInitial;
   }
+
+// ==========================================
+// 🚨 測試用：刻意製造的 DOM XSS 漏洞 🚨
+// ==========================================
+function showWelcomeMessage() {
+  // 1. 從網址列取得使用者輸入的參數 (Source)
+  const params = new URLSearchParams(window.location.search);
+  const userName = params.get('name');
+  
+  if (userName) {
+    // 2. 未經任何消毒 (Sanitization)，直接使用 innerHTML 寫入畫面 (Sink)
+    // 💡 駭客可以傳遞 ?name=<img src=x onerror=alert('駭客入侵')> 來執行惡意程式碼
+    const instructionEl = document.getElementById("instruction");
+    instructionEl.innerHTML = "歡迎玩家：" + userName + "！<br>請說出你猜的數字（範圍 1～30）";
+  }
+}
+
+// 確保在網頁載入時執行這個危險函式
+document.addEventListener('DOMContentLoaded', showWelcomeMessage);
+// ==========================================
+  
 });
